@@ -1,3 +1,4 @@
+package racetimer;
 
 public class RaceRegister {
 

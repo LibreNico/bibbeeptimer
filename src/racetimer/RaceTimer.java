@@ -1,3 +1,5 @@
+package racetimer;
+
 import javax.sound.sampled.LineUnavailableException;
 import java.io.BufferedWriter;
 import java.io.File;

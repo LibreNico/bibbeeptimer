@@ -1,4 +1,4 @@
-
+package racetimer;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

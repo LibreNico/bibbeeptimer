@@ -1,3 +1,5 @@
+package racetimer;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -57,9 +59,13 @@ public class RaceUtil {
     }
 
     public static void tone(int hz, int msecs)
-            throws LineUnavailableException
+
     {
-        tone(hz, msecs, 1.0);
+        try {
+            tone(hz, msecs, 1.0);
+        } catch (LineUnavailableException e) {
+            e.printStackTrace();
+        }
     }
 
     public static long getMillisecond(LocalTime date1) {
@@ -83,4 +89,11 @@ public class RaceUtil {
         }
     }
 
+    public static void printError(String msg) {
+        System.out.println("[ERROR] "+msg);
+    }
+
+    public static void printInfo(String msg) {
+        System.out.println("[INFO] "+msg);
+    }
 }
