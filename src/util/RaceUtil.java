@@ -1,35 +1,24 @@
-package racetimer;
+package util;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 
 public class RaceUtil {
-
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_BLACK = "\u001B[30m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
-    private static final String ERROR_TAG = "[ERROR] ";
-    private static final String INFO_TAG = "[INFO] ";
-
-    public static void printError(StringBuilder message){
-        System.out.println(new StringBuilder().append(RaceUtil.ANSI_RED).append(ERROR_TAG).append(message).append(RaceUtil.ANSI_RESET));
-    }
-
-    public static void printInfo(StringBuilder message){
-        System.out.println(new StringBuilder().append(RaceUtil.ANSI_BLUE).append(INFO_TAG).append(message).append(RaceUtil.ANSI_RESET));
-    }
 
 
     public static float SAMPLE_RATE = 8000f;
@@ -95,5 +84,49 @@ public class RaceUtil {
 
     public static void printInfo(String msg) {
         System.out.println("[INFO] "+msg);
+    }
+
+
+    public static void backupData(String inputScan, BufferedWriter writer) {
+
+        if(writer != null){
+            try {
+                writer.write(inputScan+"\n");
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+
+        //Toolkit.getDefaultToolkit().beep();
+        RaceUtil.tone(1000, 100);
+
+    }
+
+    public static BufferedWriter createBackup()  {
+
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+            String formatTime = LocalDateTime.now().format(formatter);
+
+            File yourFile = new File("bibbeep_backup_" + formatTime + ".csv");
+            yourFile.createNewFile();
+
+            return Files.newBufferedWriter(Paths.get(yourFile.getPath()));
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static void closeBackup(BufferedWriter backupWriter) {
+        if(backupWriter != null){
+            try {
+                backupWriter.close();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
     }
 }

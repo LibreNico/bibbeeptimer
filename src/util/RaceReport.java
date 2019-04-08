@@ -1,4 +1,6 @@
-package racetimer;
+package util;
+
+import model.Runner;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14,27 +16,27 @@ import java.util.stream.Collectors;
 
 public class RaceReport {
     private static final String HTML_HEADER = "";
-          /* "<!DOCTYPE html>\n" +
-           "<html>\n" +
-            "<head>\n" +
-            "<meta charset=\"UTF-8\">\n" +
-            "<style>\n" +
-            "table, td, th {    \n" +
-            "    border: 1px solid #ddd;\n" +
-            "    text-align: left;\n" +
-            "}\n" +
-            "\n" +
-            "table {\n" +
-            "    border-collapse: collapse;\n" +
-            "    width: 100%;\n" +
-            "}\n" +
-            "\n" +
-            "th, td {\n" +
-            "    padding: 15px;\n" +
-            "}\n" +
-            "</style>\n" +
-            "</head>\n" +
-            "<body>\n" ;*/
+    /* "<!DOCTYPE html>\n" +
+     "<html>\n" +
+      "<head>\n" +
+      "<meta charset=\"UTF-8\">\n" +
+      "<style>\n" +
+      "table, td, th {    \n" +
+      "    border: 1px solid #ddd;\n" +
+      "    text-align: left;\n" +
+      "}\n" +
+      "\n" +
+      "table {\n" +
+      "    border-collapse: collapse;\n" +
+      "    width: 100%;\n" +
+      "}\n" +
+      "\n" +
+      "th, td {\n" +
+      "    padding: 15px;\n" +
+      "}\n" +
+      "</style>\n" +
+      "</head>\n" +
+      "<body>\n" ;*/
     private static final String TABLE_HEADER = "<table>\n" +
             "  <tr>\n" +
             "    <th width=\"7%\">Pos.</th>\n" +
@@ -45,10 +47,10 @@ public class RaceReport {
             "    <th width=\"6%\">Gender</th>\n" +
             "  </tr>";
     private static final String HTML_FOOTER = "";
-            /*"</body>\n" +
-            "</html>";*/
+    /*"</body>\n" +
+    "</html>";*/
     private static final String TABLE_FOOTER = "</table>\n";
-    private static Map<String, RaceRegister> mapRegistration;
+    private static Map<String, Runner> mapRegistration;
 
     //camréo go pro ipv crieur
     // grand chrono >> tablet
@@ -60,13 +62,16 @@ public class RaceReport {
     // new Subcription(id, first, lastname, bithyear, group )
     // subcription.put(id , ractimer)
 
-
+/*
     public static void main(String[] args) throws IOException {
 
+
         loadRegistrationsInMemory();
+
         loadSortAnndOutputResults();
 
     }
+
 
     private static void loadRegistrationsInMemory() throws IOException {
         mapRegistration = Files.list(Paths.get(".")).map(String::valueOf)
@@ -84,19 +89,20 @@ public class RaceReport {
                 }).collect(Collectors.toMap(raceReport -> raceReport.getId(), raceReport -> raceReport));
     }
 
+
     private static void loadSortAnndOutputResults() throws IOException {
         String pathResult = Files.list(Paths.get(".")).map(String::valueOf)
                 .filter(path -> path.startsWith("./jracetime"))
                 .sorted().reduce((a, b) -> b)
                 .orElse(null);
 
-        System.out.println("pathResult"+pathResult);
+        System.out.println("pathResult" + pathResult);
 
         BufferedReader reader = Files.newBufferedReader(Paths.get(pathResult));
         reader.readLine();
 
 
-        List<RaceResult>  listRace = reader
+        List<RaceResult> listRace = reader
                 .lines()
                 .map(RaceReport::toResult)
                 .peek(raceResult -> raceResult.setPerson(mapRegistration.get(raceResult.getId())))
@@ -107,7 +113,7 @@ public class RaceReport {
         Comparator<RaceResult> byTime = Comparator.comparing(RaceResult::getTime);
 
 
-      //  listRace = listRace.stream().sorted(byCategory.thenComparing(byTime)).collect(Collectors.toList());
+        //  listRace = listRace.stream().sorted(byCategory.thenComparing(byTime)).collect(Collectors.toList());
 
         listRace = listRace.stream().sorted(byTime).collect(Collectors.toList());
 
@@ -136,17 +142,17 @@ public class RaceReport {
             //writer.write("<h1 style=\"color:#1279be;\">Joggans - Sentiers du Laerbeek / Laarbeeksepaden "+dateTime.getYear()+"</h1>");
 
             Map<String, List<RaceResult>> mapCategory;
-           if(isByCatgory){
-               mapCategory = listRace.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getPerson().getCategory()));
-           }else{
-               mapCategory = new HashMap<>();
-               mapCategory.put("aucune/geen", listRace);
-           }
-            Comparator<String> byCategory = Comparator.comparing(RaceRegister::getCategoryScore);
+            if (isByCatgory) {
+                mapCategory = listRace.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getPerson().getCategory()));
+            } else {
+                mapCategory = new HashMap<>();
+                mapCategory.put("aucune/geen", listRace);
+            }
+            Comparator<String> byCategory = Comparator.comparing(Runner::getCategoryScore);
             mapCategory.keySet().stream().sorted(byCategory).forEach(
                     category -> {
                         try {
-                            writer.write("<h2> Catégorie/categorie "+RaceRegister.getCategoryName(category)+"</h2>\n");
+                            writer.write("<h2> Catégorie/categorie " + Runner.getCategoryName(category) + "</h2>\n");
                             writer.write(TABLE_HEADER);
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -156,12 +162,12 @@ public class RaceReport {
                                 raceResult -> {
                                     try {
                                         writer.write("<tr>\n" +
-                                                "    <td>" +counter.getAndIncrement()+"</td>\n" +
-                                                "    <td>" +raceResult.getId()+"</td>\n" +
-                                                "    <td>"+raceResult.getPerson().getName()+"</td>\n" +
-                                                "    <td>"+raceResult.getTime()+"</td>\n" +
-                                                "    <td>"+raceResult.getPerson().getClub()+"</td>\n" +
-                                               "    <td>"+raceResult.getPerson().getGender()+"</td>\n" +
+                                                "    <td>" + counter.getAndIncrement() + "</td>\n" +
+                                                "    <td>" + raceResult.getId() + "</td>\n" +
+                                                "    <td>" + raceResult.getPerson().getFirstName() + " " + raceResult.getPerson().getLastName() + "</td>\n" +
+                                                "    <td>" + raceResult.getTime() + "</td>\n" +
+                                                "    <td>" + raceResult.getPerson().getClub() + "</td>\n" +
+                                                "    <td>" + raceResult.getPerson().getGender() + "</td>\n" +
                                                 "  </tr>");
                                     } catch (IOException e) {
                                         e.printStackTrace();
@@ -171,7 +177,7 @@ public class RaceReport {
 
                         try {
                             writer.write(TABLE_FOOTER);
-                            writer.write("<h3>Total/totaal: "+counter.decrementAndGet()+"</h3>\n");
+                            writer.write("<h3>Total/totaal: " + counter.decrementAndGet() + "</h3>\n");
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -189,8 +195,8 @@ public class RaceReport {
     private static RaceResult toResult(String line) {
         String[] values = line.split(";");
 
-       // System.out.println(line);
-       // System.out.println(values.length);
+        // System.out.println(line);
+        // System.out.println(values.length);
         if (values.length >= 2) {
             return new RaceResult(values[0], values[1]);
         }
@@ -199,30 +205,7 @@ public class RaceReport {
         return null;
     }
 
-    private static RaceRegister toRegister(String line) {
-        String[] values = line.split(";", -1);
-
-       // System.out.println(line);
-       // System.out.println(values.length);
-
-
-        if (values.length >= 7) {
-            String id = values[0]; //442
-            String name = values[1] + " " + values[2]; //PELLIZZARI  //IGOR
-            String gender = values[4]; //M
-            String birthDate = values[3]; //1970
-            String age = values[5]; //48
-            String category = values[6]; //V1
-            String club = values[7];
-          //  String bxlChallenge = values[8];
-
-            return new RaceRegister(id, name, gender, birthDate, age, category, club, "");
-        }
-
-        RaceUtil.printError(new StringBuilder().append("#toRegister ").append(line).append(" is not accepted."));
-        return null;
-
-    }
+*/
 
 
 }

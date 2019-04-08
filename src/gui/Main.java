@@ -22,12 +22,13 @@ import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import racetimer.RaceUtil;
+import model.Runner;
+import util.RaceUtil;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 
 public class Main extends Application {
 
@@ -43,7 +44,11 @@ public class Main extends Application {
     private static StringBuilder inputKeyBordBuffer = new StringBuilder();
     private ListView<Object> listFinisher;
     Set<String> alreadyBeeped = new HashSet<>();
+    private static Map<String, Runner> mapIdRunner = new HashMap<>();
+    private static Map<String, String> mapIdTime = new HashMap<>();
+
     private boolean hasRaceStarted;
+    private BufferedWriter backupWriter;
 
 
     @Override
@@ -106,17 +111,26 @@ public class Main extends Application {
             if (hasRaceStarted) {
 
                 if (key.getCode() == KeyCode.ENTER) {
-                    String inputKeys = inputKeyBordBuffer.toString();
-
-                    if (!RaceUtil.isNumeric(inputKeys)) {
+                    String inputKeys = removeCheckDigit(inputKeyBordBuffer.toString());
+                    if (inputKeys.length() < 2) {
+                        RaceUtil.printError("Scanned input " + inputKeys + " is not long enough.");
+                    }else if (!RaceUtil.isNumeric(inputKeys)) {
                         RaceUtil.printError("Scanned input " + inputKeys + " is not numeric.");
                     } else if (alreadyBeeped.contains(inputKeys)) {
                         RaceUtil.printError("Scanned input " + inputKeys + " already scan.");
                     } else {
-                        listFinisher.getItems().add(inputKeyBordBuffer + " - " + stopwatchLabel.getText());
+                        String time = stopwatchLabel.getText();
+                        mapIdTime.put(inputKeys, time);
+                        if(mapIdRunner.containsKey(inputKeys)){
+                            listFinisher.getItems().add(mapIdRunner.get(inputKeys).getName() + " - " + time);
+                        }else{
+                            listFinisher.getItems().add(inputKeys + " - " + time);
+                            RaceUtil.printError("Runner with bib "+inputKeys+" not found!");
+                        }
                         alreadyBeeped.add(inputKeys);
-                        RaceUtil.printInfo("Bib scan: " + inputKeyBordBuffer + ";" + stopwatchLabel.getText());
-                        RaceUtil.tone(1000, 100);
+                        String data = inputKeys + ";" + time;
+                        RaceUtil.printInfo("Bib scan: " + data);
+                        RaceUtil.backupData(data, backupWriter);
                     }
 
                     inputKeyBordBuffer.setLength(0);
@@ -128,6 +142,10 @@ public class Main extends Application {
 
             }
         });
+    }
+
+    private String removeCheckDigit(String bib) {
+        return bib.substring(0, bib.length() - 1);
     }
 
     private Label createStopWatch() {
@@ -180,6 +198,8 @@ public class Main extends Application {
                 buttonStartStop.setText("Stop");
                 buttonStartStop.setGraphic(imageStop);
                 timeline.play();
+                backupWriter = RaceUtil.createBackup();
+
             } else {
 
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -195,6 +215,8 @@ public class Main extends Application {
                     timeline.pause();
                     stopwatchLabel.setText(INIT_STOPWACHT);
                     alreadyBeeped.clear();
+                    RaceUtil.closeBackup(backupWriter);
+
                 }
 
             }
@@ -202,7 +224,7 @@ public class Main extends Application {
 
 
         //Creating button2
-        Button buttonAddRunners = new Button("Runners");
+        Button buttonAddRunners = new Button("Runner");
         Image image2 = new Image(getClass().getResourceAsStream("icons/plus-outline.png"));
         buttonAddRunners.setGraphic(new ImageView(image2));
 
@@ -212,12 +234,34 @@ public class Main extends Application {
                     configureFileChooser(fileChooser);
                     File file = fileChooser.showOpenDialog(stage);
                     if (file != null) {
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Information Dialog");
-                        alert.setHeaderText(null);
-                        alert.setContentText("I have a great message for you! " + file.getAbsolutePath());
 
-                        alert.showAndWait();
+                        if(isCSVFile(file)){
+
+
+                            if(Runner.loadCsvFile(file, mapIdRunner)){
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                alert.setTitle("Information Dialog");
+                                alert.setContentText("The runners are loaded from " + file.getName());
+                                alert.showAndWait();
+
+                            }else{
+
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error Dialog");
+                                alert.setContentText("Parsing error while reading: " + file.getName());
+                                alert.showAndWait();
+
+                            }
+
+                        }else{
+
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Error Dialog");
+                            alert.setContentText("The selected file is not CSV format: " + file.getName());
+                            alert.showAndWait();
+
+                        }
+
                     }
                 });
 
@@ -248,6 +292,18 @@ public class Main extends Application {
         list.addAll(buttonStartStop, buttonAddRunners, button3, buttonBackup);
 
         return flowPane;
+    }
+
+    private boolean isCSVFile(File file) {
+
+        String extension = "";
+
+        int i = file.getName().lastIndexOf('.');
+        if (i > 0) {
+            extension = file.getName().substring(i+1);
+        }
+
+        return extension.equalsIgnoreCase("csv");
     }
 
     private static void configureFileChooser(final FileChooser fileChooser) {
