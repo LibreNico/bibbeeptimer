@@ -21,17 +21,17 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import model.Runner;
 import util.RaceUtil;
 
-import javafx.scene.control.CheckBox;
-
-import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Main extends Application {
@@ -39,6 +39,8 @@ public class Main extends Application {
     public static final String INIT_STOPWACHT = "00:00:00";
     public static final String APP_TITLE = "BibBeep - run race timer by joggans.be";
     private static final String COPYLEFT = "Bib scanning and timing software made by the joggans.be club";
+    public static final String LABEL_RUNNERS = "Imported runners: ";
+    public static final String LABEL_BACKUP = "Backup folder: ";
     private int mins = 0;
     private int secs = 0;
     private int millis = 0;
@@ -56,10 +58,12 @@ public class Main extends Application {
     private Label importedRunnersLabel;
     private Label backupFolderLabel;
     private javafx.scene.control.CheckBox removeLastDigitLabel;
+    private String backupPath = System.getProperty("user.home");
+    private String uniqueNameFile;
 
 
     @Override
-    public void start(Stage stage)  {
+    public void start(Stage stage) {
 
         BorderPane bPane = new BorderPane();
         bPane.setTop(createHeader(stage));
@@ -80,7 +84,8 @@ public class Main extends Application {
         //Adding scene to the stage
         stage.setScene(scene);
 
-        stage.setMinWidth(450);
+        stage.setMinWidth(700);
+        stage.setMinHeight(500);
 
         //Displaying the contents of the stage
         stage.show();
@@ -105,23 +110,19 @@ public class Main extends Application {
     }
 
     private Node createInfoBox() {
-        HBox info = new HBox();
-        info.setSpacing(5);
+        HBox infoBox = new HBox();
+        infoBox.setSpacing(5);
 
-        //retrieving the observable list of the VBox
-        ObservableList list = info.getChildren();
+        ObservableList list = infoBox.getChildren();
 
-        //TODO dynamic
-        importedRunnersLabel = new Label("Imported runners: "+mapIdRunner.size());
-        backupFolderLabel = new Label("| Backup folder: "+System.getProperty("user.home") +" | ");
-        removeLastDigitLabel = new javafx.scene.control.CheckBox("has check digit?");
-        removeLastDigitLabel.setSelected(true);
+        importedRunnersLabel = new Label(LABEL_RUNNERS + mapIdRunner.size());
+        backupFolderLabel = new Label(LABEL_BACKUP + backupPath);
+        removeLastDigitLabel = new javafx.scene.control.CheckBox("take last digit?");
 
+       // infoBox.setMargin(removeLastDigitLabel, new Insets(0, 0, 0, 10));
 
-
-        //Adding all the nodes to the observable list
-        list.addAll(importedRunnersLabel,backupFolderLabel,removeLastDigitLabel);
-        return info;
+        list.addAll(removeLastDigitLabel, new Label(" | "), importedRunnersLabel , new Label(" | "), backupFolderLabel);
+        return infoBox;
     }
 
     private Node createAbout() {
@@ -142,24 +143,27 @@ public class Main extends Application {
             if (hasRaceStarted) {
 
                 if (key.getCode() == KeyCode.ENTER) {
-                    String inputKeys = removeCheckDigit(inputKeyBordBuffer.toString());
-                    if (inputKeys.length() < 2) {
-                        RaceUtil.printError("Scanned input " + inputKeys + " is not long enough.");
-                    }else if (!RaceUtil.isNumeric(inputKeys)) {
-                        RaceUtil.printError("Scanned input " + inputKeys + " is not numeric.");
-                    } else if (alreadyBeeped.contains(inputKeys)) {
-                        RaceUtil.printError("Scanned input " + inputKeys + " already scan.");
+                    String bib = inputKeyBordBuffer.toString();
+
+
+                    if ((!removeLastDigitLabel.isSelected() && bib.length() < 2)
+                            || (removeLastDigitLabel.isSelected() && bib.length() < 1)) {
+                        RaceUtil.printError("Scanned input " + bib + " is not long enough.");
+                    }else if (!RaceUtil.isNumeric(bib)) {
+                        RaceUtil.printError("Scanned input " + bib + " is not numeric.");
+                    } else if (alreadyBeeped.contains(bib)) {
+                        RaceUtil.printError("Scanned input " + bib + " already scan.");
                     } else {
-                        String time = stopwatchLabel.getText();
-                        mapIdTime.put(inputKeys, time);
-                        if(mapIdRunner.containsKey(inputKeys)){
-                            listFinisher.getItems().add(mapIdRunner.get(inputKeys).getName() + " - " + time);
-                        }else{
-                            listFinisher.getItems().add(inputKeys + " - " + time);
-                            RaceUtil.printError("Runner with bib "+inputKeys+" not found!");
+
+                        if(!removeLastDigitLabel.isSelected()){
+                            bib = bib.substring(0, bib.length() - 1);
                         }
-                        alreadyBeeped.add(inputKeys);
-                        String data = inputKeys + ";" + time;
+
+                        String time = stopwatchLabel.getText();
+                        mapIdTime.put(bib, time);
+                        updateListFinisher(bib, time);
+                        alreadyBeeped.add(bib);
+                        String data = bib + ";" + time;
                         RaceUtil.printInfo("Bib scan: " + data);
                         RaceUtil.backupData(data, backupWriter);
                     }
@@ -175,9 +179,16 @@ public class Main extends Application {
         });
     }
 
-    private String removeCheckDigit(String bib) {
-        return bib.substring(0, bib.length() - 1);
+    private void updateListFinisher(String bib, String time) {
+        if (mapIdRunner.containsKey(bib)) {
+            listFinisher.getItems().add(mapIdRunner.get(bib).getName() + " - " + time);
+        } else {
+            listFinisher.getItems().add(bib + " - " + time);
+            RaceUtil.printError("Runner with bib " + bib + " not found!");
+        }
     }
+
+
 
     private Label createStopWatch() {
         //https://gist.github.com/SatyaSnehith/167779aac353b4e79f8dfae4ed23cb85
@@ -225,15 +236,17 @@ public class Main extends Application {
                 hasRaceStarted = true;
                 buttonStartStop.setText("Stop");
                 buttonStartStop.setGraphic(imageStop);
+                listFinisher.getItems().clear();
                 timeline.play();
-                backupWriter = RaceUtil.createBackup();
+                uniqueNameFile = RaceUtil.createUniqueNameFile();
+                backupWriter = RaceUtil.createBackup(backupPath, uniqueNameFile);
 
             } else {
 
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Confirmation Dialog");
-                alert.setHeaderText("Stop the race");
-                alert.setContentText("Are you sure you want to stop the timing?");
+                alert.setHeaderText("Stop the race?");
+                alert.setContentText("Backup store in " + backupPath + uniqueNameFile);
 
                 Optional<ButtonType> result = alert.showAndWait();
                 if (result.get() == ButtonType.OK) {
@@ -263,16 +276,14 @@ public class Main extends Application {
                     File file = fileChooser.showOpenDialog(stage);
                     if (file != null) {
 
-                        if(isCSVFile(file)){
+                        if (isCSVFile(file)) {
 
 
-                            if(Runner.loadCsvFile(file, mapIdRunner)){
-                                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                                alert.setTitle("Information Dialog");
-                                alert.setContentText("The runners are loaded from " + file.getName());
-                                alert.showAndWait();
+                            if (Runner.loadRunnerCsvFile(file, mapIdRunner)) {
 
-                            }else{
+                                importedRunnersLabel.setText(LABEL_RUNNERS + mapIdRunner.size());
+
+                            } else {
 
                                 Alert alert = new Alert(Alert.AlertType.ERROR);
                                 alert.setTitle("Error Dialog");
@@ -281,7 +292,7 @@ public class Main extends Application {
 
                             }
 
-                        }else{
+                        } else {
 
                             Alert alert = new Alert(Alert.AlertType.ERROR);
                             alert.setTitle("Error Dialog");
@@ -294,33 +305,82 @@ public class Main extends Application {
                 });
 
         //Creating button3
-        Button button3 = new Button("Report");
+        Button buttonReport = new Button("Report");
         Image image3 = new Image(getClass().getResourceAsStream("icons/printer.png"));
-        button3.setGraphic(new ImageView(image3));
+        buttonReport.setGraphic(new ImageView(image3));
+
+
+        Button buttonSetBackup = new Button("Backup");
+        ImageView editImageView = new ImageView(new Image(getClass().getResourceAsStream("icons/folder.png")));
+        buttonSetBackup.setGraphic(editImageView);
+
+
+        buttonSetBackup.setOnAction(
+                e -> {
+
+                    DirectoryChooser chooser = new DirectoryChooser();
+                    chooser.setTitle("Select backup folder");
+                    File defaultDirectory = new File(backupPath);
+                    chooser.setInitialDirectory(defaultDirectory);
+                    File selectedDirectory = chooser.showDialog(stage);
+                    if (selectedDirectory != null) {
+                        backupPath = selectedDirectory.getAbsolutePath();
+                        backupFolderLabel.setText(LABEL_BACKUP + backupPath);
+                    }
+
+                });
 
 
         //Creating button4
-        Button buttonBackup = new Button("Backup");
-        Image image5 = new Image(getClass().getResourceAsStream("icons/folder.png"));
-        buttonBackup.setGraphic(new ImageView(image5));
+        Button buttonLoadBackup = new Button("Load");
+        Image image5 = new Image(getClass().getResourceAsStream("icons/download-outline.png"));
+        buttonLoadBackup.setGraphic(new ImageView(image5));
 
-        //Creating a Flow Pane
-        FlowPane flowPane = new FlowPane();
+        buttonLoadBackup.setOnAction(
+                e -> {
+                    configureFileChooser(fileChooser);
+                    File file = fileChooser.showOpenDialog(stage);
+                    if (file != null) {
 
-        //Setting the horizontal gap between the nodes
-        flowPane.setHgap(25);
+                        if (isCSVFile(file)) {
 
-        //Setting the margin of the pane
-        flowPane.setMargin(buttonStartStop, new Insets(10, 0, 10, 10));
+                            if (Runner.loadBackupFile(file, mapIdTime)) {
+                                listFinisher.getItems().clear();
+                                mapIdTime.forEach((bib, time) -> updateListFinisher(bib, time));
+                            } else {
 
-        //Retrieving the observable list of the flow Pane
-        ObservableList list = flowPane.getChildren();
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error Dialog");
+                                alert.setContentText("Parsing error while reading: " + file.getName());
+                                alert.showAndWait();
 
-        //Adding all the nodes to the flow pane
-        list.addAll(buttonStartStop, buttonAddRunners, button3, buttonBackup);
+                            }
 
-        return flowPane;
+                        } else {
+
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Error Dialog");
+                            alert.setContentText("The selected file is not CSV format: " + file.getName());
+                            alert.showAndWait();
+
+                        }
+
+                    }
+                });
+
+        HBox buttonBox = new HBox();
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setSpacing(5);
+
+        ObservableList list = buttonBox.getChildren();
+        buttonBox.setMargin(buttonStartStop, new Insets(10, 0, 10, 10));
+
+        list.addAll(buttonStartStop, buttonAddRunners, buttonReport, buttonSetBackup, buttonLoadBackup);
+
+        return buttonBox;
     }
+
+
 
     private boolean isCSVFile(File file) {
 
@@ -328,7 +388,7 @@ public class Main extends Application {
 
         int i = file.getName().lastIndexOf('.');
         if (i > 0) {
-            extension = file.getName().substring(i+1);
+            extension = file.getName().substring(i + 1);
         }
 
         return extension.equalsIgnoreCase("csv");

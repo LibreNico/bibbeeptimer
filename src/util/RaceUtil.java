@@ -102,14 +102,20 @@ public class RaceUtil {
 
     }
 
-    public static BufferedWriter createBackup()  {
+    public static String createUniqueNameFile() {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMdd_HHmmss");
+        String formatTime = LocalDateTime.now().format(formatter);
+        return  "/bibbeep_backup_" + formatTime + ".csv";
+    }
+
+    public static BufferedWriter createBackup(String backupPath, String uniqueName)  {
 
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
-            String formatTime = LocalDateTime.now().format(formatter);
-
-            File yourFile = new File("bibbeep_backup_" + formatTime + ".csv");
+            String pathname = backupPath + uniqueName ;
+            printInfo("Backup file: "+pathname);
+            File yourFile = new File(pathname);
             yourFile.createNewFile();
 
             return Files.newBufferedWriter(Paths.get(yourFile.getPath()));

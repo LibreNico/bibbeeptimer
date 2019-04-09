@@ -39,6 +39,8 @@ public class Runner {
         this.brChallenge = brChallenge;
     }
 
+
+
     public LocalTime getTime() {
         return time;
     }
@@ -47,7 +49,7 @@ public class Runner {
         this.time= LocalTime.parse(time, formatter);
     }
 
-    public static boolean loadCsvFile(File file, Map<String, Runner> mapIdRunner) {
+    public static boolean loadRunnerCsvFile(File file, Map<String, Runner> mapIdRunner) {
 
 
         try {
@@ -58,7 +60,7 @@ public class Runner {
 
             Map<String, Runner> loadedRunners =
                     reader.lines()
-                            .map(Runner::parse)
+                            .map(Runner::parseRunner)
                             .collect(Collectors.toMap(raceReport -> raceReport.getId(), raceReport -> raceReport));
 
             if (loadedRunners != null && loadedRunners.size() > 0) {
@@ -74,12 +76,49 @@ public class Runner {
 
     }
 
+    public static boolean loadBackupFile(File file, Map<String, String> mapIdTime) {
+
+
+        try {
+            BufferedReader reader = Files.newBufferedReader(Paths.get(file.getAbsolutePath()));
+
+            Map<String, String> loadedRunners =
+                    reader.lines()
+                            .map(Runner::parseTime)
+                            .collect(Collectors.toMap(runner -> runner.getId(), runner -> runner.getTime()));
+
+            if (loadedRunners != null && loadedRunners.size() > 0) {
+                mapIdTime.putAll(loadedRunners);
+                return true;
+            }
+            return false;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static RunnerTime parseTime(String line) {
+        String[] values = line.split(";", -1);
+
+        if (values.length == 2) {
+            String id = values[0]; //442
+            String time = values[1];
+
+            return new RunnerTime(id, time);
+        } else {
+            RaceUtil.printError("Import runner " + line + " failed.");
+            return null;
+        }
+    }
+
     private static boolean isHeaderColumnWithRightSize(String line) {
         String[] values = line.split(";", -1);
         return values.length >= 7;
     }
 
-    private static Runner parse(String line) {
+    private static Runner parseRunner(String line) {
         String[] values = line.split(";", -1);
 
         if (values.length >= 7) {

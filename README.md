@@ -1,5 +1,4 @@
-# BibBeep - run race timer
+# BibBeep - run race timer by joggans.be
 
-Open source bib scanning and timing software made by the joggans.be club
-
+Open source bib scanning (via barcode scanner or keyboard) and timing software made by the [Joggans](https://www.joogans.be) club
 
