@@ -10,6 +10,8 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -25,16 +27,18 @@ import javafx.util.Duration;
 import model.Runner;
 import util.RaceUtil;
 
+import javafx.scene.control.CheckBox;
+
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class Main extends Application {
 
     public static final String INIT_STOPWACHT = "00:00:00";
-    public static final String APP_TITLE = "BibBeep - race timing system";
-    private static final String COPYLEFT = "Bib scanning and timing software made by the Joggans club";
+    public static final String APP_TITLE = "BibBeep - run race timer by joggans.be";
+    private static final String COPYLEFT = "Bib scanning and timing software made by the joggans.be club";
     private int mins = 0;
     private int secs = 0;
     private int millis = 0;
@@ -49,26 +53,17 @@ public class Main extends Application {
 
     private boolean hasRaceStarted;
     private BufferedWriter backupWriter;
+    private Label importedRunnersLabel;
+    private Label backupFolderLabel;
+    private javafx.scene.control.CheckBox removeLastDigitLabel;
 
 
     @Override
     public void start(Stage stage)  {
 
-
-        //Instantiating the VBox class
-        VBox vBox = new VBox();
-        vBox.setAlignment(Pos.CENTER);
-        vBox.setSpacing(5);
-
-        //retrieving the observable list of the VBox
-        ObservableList list = vBox.getChildren();
-
-        //Adding all the nodes to the observable list
-        list.addAll(createHeaderOptions(stage), createStopWatch());
-
         BorderPane bPane = new BorderPane();
-        bPane.setTop(vBox);
-        bPane.setBottom(createAbout());
+        bPane.setTop(createHeader(stage));
+        //bPane.setBottom(createAbout());
         //bPane.setLeft(new TextField("Left"));
         //bPane.setRight(new TextField("Right"));
         bPane.setCenter(createFinisherList());
@@ -91,6 +86,42 @@ public class Main extends Application {
         stage.show();
 
 
+    }
+
+    private Node createHeader(Stage stage) {
+
+        //Instantiating the VBox class
+        VBox vBox = new VBox();
+        vBox.setAlignment(Pos.CENTER);
+        vBox.setSpacing(5);
+
+        //retrieving the observable list of the VBox
+        ObservableList list = vBox.getChildren();
+
+        //Adding all the nodes to the observable list
+        list.addAll(createHeaderButtons(stage), createStopWatch(), createInfoBox());
+
+        return vBox;
+    }
+
+    private Node createInfoBox() {
+        HBox info = new HBox();
+        info.setSpacing(5);
+
+        //retrieving the observable list of the VBox
+        ObservableList list = info.getChildren();
+
+        //TODO dynamic
+        importedRunnersLabel = new Label("Imported runners: "+mapIdRunner.size());
+        backupFolderLabel = new Label("| Backup folder: "+System.getProperty("user.home") +" | ");
+        removeLastDigitLabel = new javafx.scene.control.CheckBox("has check digit?");
+        removeLastDigitLabel.setSelected(true);
+
+
+
+        //Adding all the nodes to the observable list
+        list.addAll(importedRunnersLabel,backupFolderLabel,removeLastDigitLabel);
+        return info;
     }
 
     private Node createAbout() {
@@ -175,15 +206,12 @@ public class Main extends Application {
 
     private Node createFinisherList() {
         listFinisher = new ListView<>();
-      /*  ObservableList<String> items = FXCollections.observableArrayList (
-                "Single", "Double", "Suite", "Family App", "Loollll" , "Loollll", "Loollll", "Loollll", "Loollll", "Loollll", "Loollll", "Loollll");
-        listFinisher.setItems(items);*/
         listFinisher.setPrefWidth(100);
         listFinisher.setPrefHeight(100);
         return listFinisher;
     }
 
-    private Parent createHeaderOptions(Stage stage) {
+    private Parent createHeaderButtons(Stage stage) {
         //Creating button1
         Button buttonStartStop = new Button("Start");
 
