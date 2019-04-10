@@ -14,17 +14,31 @@ import java.util.stream.Collectors;
 
 public class Runner {
 
-    private final String id;
-    private final String lastName;
-    private final String firstName;
-    private final String gender;
-    private final String birthDate;
-    private final String age;
-    private final String category;
-    private final String club;
-    private final Boolean brChallenge;
+    private static final String UNKNOWN = "Unknown";
+    private String id;
+    private String lastName;
+    private String firstName;
+    private String gender;
+    private String birthDate;
+    private String age;
+    private String category;
+    private String club;
+    private Boolean brChallenge;
     private LocalTime time;
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm:ss.SSS");
+
+    public Runner(String id, String time){
+        this.id=id;
+        this.lastName = UNKNOWN;
+        this.firstName = UNKNOWN;
+        this.gender = UNKNOWN;
+        this.birthDate = UNKNOWN;
+        this.age = UNKNOWN;
+        this.category = UNKNOWN;
+        this.club = UNKNOWN;
+        this.brChallenge = false;
+        setTime(time);
+    }
 
 
     public Runner(String id, String firstName, String lastName, String gender, String birthDate, String age, String category, String club, boolean brChallenge) {

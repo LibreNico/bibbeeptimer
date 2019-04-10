@@ -17,7 +17,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -30,19 +29,22 @@ import util.RaceUtil;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.IOException;
 import java.util.*;
+
+import static util.RaceUtil.BACKUP_PREFIX;
+import static util.RaceUtil.CSV_EXTENSION;
 
 public class Main extends Application {
 
-    public static final String INIT_STOPWACHT = "00:00:00";
+    public static final String INIT_STOPWACHT = "00:00:00.000";
     public static final String APP_TITLE = "BibBeep - run race timer by joggans.be";
     private static final String COPYLEFT = "Bib scanning and timing software made by the joggans.be club";
     public static final String LABEL_RUNNERS = "Imported runners: ";
-    public static final String LABEL_BACKUP = "Backup folder: ";
+    public static final String LABEL_BACKUP = "Export folder: ";
     private int mins = 0;
     private int secs = 0;
+    private int hours = 0;
     private int millis = 0;
     private Label stopwatchLabel;
     private Timeline timeline;
@@ -209,9 +211,18 @@ public class Main extends Application {
             mins++;
             secs = 0;
         }
-        text.setText((((mins / 10) == 0) ? "0" : "") + mins + ":"
-                + (((secs / 10) == 0) ? "0" : "") + secs + ":"
-                + (((millis / 10) == 0) ? "00" : (((millis / 100) == 0) ? "0" : "")) + millis++);
+
+        if(mins==60){
+            hours++;
+            mins=0;
+        }
+
+        text.setText(
+                  (((hours / 10) == 0) ? "0" : "") + hours + ":"
+                + (((mins / 10) == 0) ? "0" : "") + mins + ":"
+                + (((secs / 10) == 0) ? "0" : "") + secs + "."
+                + (((millis / 10) == 0) ? "00" : (((millis / 100) == 0) ? "0" : "")) + millis++
+        );
     }
 
 
@@ -238,8 +249,8 @@ public class Main extends Application {
                 buttonStartStop.setGraphic(imageStop);
                 listFinisher.getItems().clear();
                 timeline.play();
-                uniqueNameFile = RaceUtil.createUniqueNameFile();
-                backupWriter = RaceUtil.createBackup(backupPath, uniqueNameFile);
+                uniqueNameFile = RaceUtil.createUniqueNameFile(BACKUP_PREFIX, CSV_EXTENSION);
+                backupWriter = RaceUtil.createBufferWriter(backupPath, uniqueNameFile);
 
             } else {
 
@@ -309,8 +320,42 @@ public class Main extends Application {
         Image image3 = new Image(getClass().getResourceAsStream("icons/printer.png"));
         buttonReport.setGraphic(new ImageView(image3));
 
+        buttonReport.setOnAction(e -> {
 
-        Button buttonSetBackup = new Button("Backup");
+            List<Runner> listRace = new ArrayList<>();
+            for(String bib: mapIdTime.keySet()){
+
+                Runner runner;
+                if(mapIdRunner.containsKey(bib)){
+                    runner = mapIdRunner.get(bib);
+                    runner.setTime(mapIdTime.get(bib));
+
+                }else{
+                    RaceUtil.printError("Runner with bib " + bib + " not found!");
+                    runner = new Runner(bib, mapIdTime.get(bib));
+                }
+
+                listRace.add(runner);
+
+            }
+
+            try {
+                String reportByCat = RaceUtil.exportHTMLFile(backupPath, listRace, true);
+                String reportAll = RaceUtil.exportHTMLFile(backupPath, listRace, false);
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Report created");
+                alert.setContentText(reportByCat+"\n"+reportAll);
+                alert.showAndWait();
+
+            } catch (IOException e1) {
+                RaceUtil.printError("Export report failde: " + e1.getMessage());
+                e1.printStackTrace();
+            }
+        });
+
+
+        Button buttonSetBackup = new Button("Export folder");
         ImageView editImageView = new ImageView(new Image(getClass().getResourceAsStream("icons/folder.png")));
         buttonSetBackup.setGraphic(editImageView);
 
@@ -319,7 +364,7 @@ public class Main extends Application {
                 e -> {
 
                     DirectoryChooser chooser = new DirectoryChooser();
-                    chooser.setTitle("Select backup folder");
+                    chooser.setTitle("Select export folder");
                     File defaultDirectory = new File(backupPath);
                     chooser.setInitialDirectory(defaultDirectory);
                     File selectedDirectory = chooser.showDialog(stage);
@@ -332,7 +377,7 @@ public class Main extends Application {
 
 
         //Creating button4
-        Button buttonLoadBackup = new Button("Load");
+        Button buttonLoadBackup = new Button("Load backup");
         Image image5 = new Image(getClass().getResourceAsStream("icons/download-outline.png"));
         buttonLoadBackup.setGraphic(new ImageView(image5));
 

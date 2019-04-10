@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class RaceReport {
-    private static final String HTML_HEADER = "";
-    /* "<!DOCTYPE html>\n" +
+    private static final String HTML_HEADER =
+    "<!DOCTYPE html>\n" +
      "<html>\n" +
       "<head>\n" +
       "<meta charset=\"UTF-8\">\n" +
@@ -36,7 +36,7 @@ public class RaceReport {
       "}\n" +
       "</style>\n" +
       "</head>\n" +
-      "<body>\n" ;*/
+      "<body>\n" ;
     private static final String TABLE_HEADER = "<table>\n" +
             "  <tr>\n" +
             "    <th width=\"7%\">Pos.</th>\n" +
@@ -125,73 +125,8 @@ public class RaceReport {
 
 
     }
-
-
-    private static String exportHTMLFile(List<RaceResult> listRace, String title, boolean isByCatgory) throws IOException {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
-        LocalDateTime dateTime = LocalDateTime.now();
-        String formatTime = dateTime.format(formatter);
-
-        String pathname = title + formatTime + ".html";
-        File yourFile = new File(pathname);
-        yourFile.createNewFile();
-
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(yourFile.getPath()))) {
-            writer.write(HTML_HEADER);
-            //writer.write("<h1 style=\"color:#1279be;\">Joggans - Sentiers du Laerbeek / Laarbeeksepaden "+dateTime.getYear()+"</h1>");
-
-            Map<String, List<RaceResult>> mapCategory;
-            if (isByCatgory) {
-                mapCategory = listRace.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getPerson().getCategory()));
-            } else {
-                mapCategory = new HashMap<>();
-                mapCategory.put("aucune/geen", listRace);
-            }
-            Comparator<String> byCategory = Comparator.comparing(Runner::getCategoryScore);
-            mapCategory.keySet().stream().sorted(byCategory).forEach(
-                    category -> {
-                        try {
-                            writer.write("<h2> Catégorie/categorie " + Runner.getCategoryName(category) + "</h2>\n");
-                            writer.write(TABLE_HEADER);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        AtomicInteger counter = new AtomicInteger(1);
-                        mapCategory.get(category).stream().forEach(
-                                raceResult -> {
-                                    try {
-                                        writer.write("<tr>\n" +
-                                                "    <td>" + counter.getAndIncrement() + "</td>\n" +
-                                                "    <td>" + raceResult.getId() + "</td>\n" +
-                                                "    <td>" + raceResult.getPerson().getFirstName() + " " + raceResult.getPerson().getLastName() + "</td>\n" +
-                                                "    <td>" + raceResult.getTime() + "</td>\n" +
-                                                "    <td>" + raceResult.getPerson().getClub() + "</td>\n" +
-                                                "    <td>" + raceResult.getPerson().getGender() + "</td>\n" +
-                                                "  </tr>");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                        );
-
-                        try {
-                            writer.write(TABLE_FOOTER);
-                            writer.write("<h3>Total/totaal: " + counter.decrementAndGet() + "</h3>\n");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-            );
-
-            writer.write(HTML_FOOTER);
-        }
-
-        return pathname;
-    }
-
-
+*/
+/*
     private static RaceResult toResult(String line) {
         String[] values = line.split(";");
 

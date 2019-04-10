@@ -1,5 +1,7 @@
 package util;
 
+import model.Runner;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -13,13 +15,56 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.MILLI_OF_DAY;
 
 public class RaceUtil {
 
+
+    public static final String CSV_EXTENSION = ".csv";
+    public static final String BACKUP_PREFIX = "/bibbeep_backup_";
+    private static final String HTML_EXTENSION = ".html";
+    private static final String REPORT_ALL_PREFIX = "/bibbeep_report_all";
+    private static final String REPORT_CATEGORY_PREFIX = "/bibbeep_report_category";
+
+    private static final String HTML_HEADER =
+            "<!DOCTYPE html>\n" +
+                    "<html>\n" +
+                    "<head>\n" +
+                    "<meta charset=\"UTF-8\">\n" +
+                    "<style>\n" +
+                    "table, td, th {    \n" +
+                    "    border: 1px solid #ddd;\n" +
+                    "    text-align: left;\n" +
+                    "}\n" +
+                    "\n" +
+                    "table {\n" +
+                    "    border-collapse: collapse;\n" +
+                    "    width: 100%;\n" +
+                    "}\n" +
+                    "\n" +
+                    "th, td {\n" +
+                    "    padding: 15px;\n" +
+                    "}\n" +
+                    "</style>\n" +
+                    "</head>\n" +
+                    "<body>\n" ;
+    private static final String TABLE_HEADER = "<table>\n" +
+            "  <tr>\n" +
+            "    <th width=\"7%\">Pos.</th>\n" +
+            "    <th width=\"7%\">Num.</th>\n" +
+            "    <th width=\"30%\">Nom|Naam</th>\n" +
+            "    <th width=\"20%\">Temps|Tijd</th>\n" +
+            "    <th width=\"26%\">Club</th>\n" +
+            "    <th width=\"6%\">Gender</th>\n" +
+            "  </tr>";
+    private static final String HTML_FOOTER = "</body>\n" +
+    "</html>";
+
+    private static final String TABLE_FOOTER = "</table>\n";
 
     public static float SAMPLE_RATE = 8000f;
 
@@ -102,14 +147,14 @@ public class RaceUtil {
 
     }
 
-    public static String createUniqueNameFile() {
+    public static String createUniqueNameFile(String prefix, String extension) {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMdd_HHmmss");
         String formatTime = LocalDateTime.now().format(formatter);
-        return  "/bibbeep_backup_" + formatTime + ".csv";
+        return  prefix + formatTime + extension;
     }
 
-    public static BufferedWriter createBackup(String backupPath, String uniqueName)  {
+    public static BufferedWriter createBufferWriter(String backupPath, String uniqueName)  {
 
 
         try {
@@ -135,4 +180,70 @@ public class RaceUtil {
             }
         }
     }
+
+
+
+
+    public static String exportHTMLFile(String pathReport, List<Runner> listRace, boolean isByCatgory) throws IOException {
+
+
+        String uniqueName = createUniqueNameFile(isByCatgory?REPORT_CATEGORY_PREFIX:REPORT_ALL_PREFIX, HTML_EXTENSION);
+
+
+        Comparator<Runner> byTime = Comparator.comparing(Runner::getTime);
+        listRace = listRace.stream().sorted(byTime).collect(Collectors.toList());
+
+        try (BufferedWriter writer = createBufferWriter(pathReport, uniqueName)) {
+            writer.write(HTML_HEADER);
+
+            Map<String, List<Runner>> mapCategory;
+            if (isByCatgory) {
+                mapCategory = listRace.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getCategory()));
+            } else {
+                mapCategory = new HashMap<>();
+                mapCategory.put("aucune/geen", listRace);
+            }
+            Comparator<String> byCategory = Comparator.comparing(Runner::getCategoryScore);
+            mapCategory.keySet().stream().sorted(byCategory).forEach(
+                    category -> {
+                        try {
+                            writer.write("<h2> Catégorie/categorie " + Runner.getCategoryName(category) + "</h2>\n");
+                            writer.write(TABLE_HEADER);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        AtomicInteger counter = new AtomicInteger(1);
+                        mapCategory.get(category).stream().forEach(
+                                raceResult -> {
+                                    try {
+                                        writer.write("<tr>\n" +
+                                                "    <td>" + counter.getAndIncrement() + "</td>\n" +
+                                                "    <td>" + raceResult.getId() + "</td>\n" +
+                                                "    <td>" + raceResult.getFirstName() + " " + raceResult.getLastName() + "</td>\n" +
+                                                "    <td>" + raceResult.getTime() + "</td>\n" +
+                                                "    <td>" + raceResult.getClub() + "</td>\n" +
+                                                "    <td>" + raceResult.getGender() + "</td>\n" +
+                                                "  </tr>");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                        );
+
+                        try {
+                            writer.write(TABLE_FOOTER);
+                            writer.write("<h3>Total/totaal: " + counter.decrementAndGet() + "</h3>\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+            );
+
+            writer.write(HTML_FOOTER);
+        }
+
+        return pathReport + uniqueName;
+    }
+
 }
