@@ -74,6 +74,7 @@ public class Runner {
 
             Map<String, Runner> loadedRunners =
                     reader.lines()
+                            .filter(line -> !line.startsWith(";"))
                             .map(Runner::parseRunner)
                             .collect(Collectors.toMap(raceReport -> raceReport.getId(), raceReport -> raceReport));
 

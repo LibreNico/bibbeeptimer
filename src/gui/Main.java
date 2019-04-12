@@ -119,7 +119,8 @@ public class Main extends Application {
 
         importedRunnersLabel = new Label(LABEL_RUNNERS + mapIdRunner.size());
         backupFolderLabel = new Label(LABEL_BACKUP + backupPath);
-        removeLastDigitLabel = new javafx.scene.control.CheckBox("take last digit?");
+        removeLastDigitLabel = new javafx.scene.control.CheckBox("with last (check) digit?");
+        removeLastDigitLabel.setSelected(true);
 
        // infoBox.setMargin(removeLastDigitLabel, new Insets(0, 0, 0, 10));
 
@@ -237,8 +238,8 @@ public class Main extends Application {
         //Creating button1
         Button buttonStartStop = new Button("Start");
 
-        ImageView imageStart = new ImageView(new Image(getClass().getResourceAsStream("icons/media-play-outline.png")));
-        ImageView imageStop = new ImageView(new Image(getClass().getResourceAsStream("icons/media-stop-outline.png")));
+        ImageView imageStart = new ImageView(new Image(getClass().getResourceAsStream("icons/play.png")));
+        ImageView imageStop = new ImageView(new Image(getClass().getResourceAsStream("icons/stop.png")));
         buttonStartStop.setGraphic(imageStart);
 
 
@@ -277,7 +278,7 @@ public class Main extends Application {
 
         //Creating button2
         Button buttonAddRunners = new Button("Runner");
-        Image image2 = new Image(getClass().getResourceAsStream("icons/plus-outline.png"));
+        Image image2 = new Image(getClass().getResourceAsStream("icons/plus.png"));
         buttonAddRunners.setGraphic(new ImageView(image2));
 
 
@@ -317,7 +318,7 @@ public class Main extends Application {
 
         //Creating button3
         Button buttonReport = new Button("Report");
-        Image image3 = new Image(getClass().getResourceAsStream("icons/printer.png"));
+        Image image3 = new Image(getClass().getResourceAsStream("icons/print.png"));
         buttonReport.setGraphic(new ImageView(image3));
 
         buttonReport.setOnAction(e -> {
@@ -355,8 +356,8 @@ public class Main extends Application {
         });
 
 
-        Button buttonSetBackup = new Button("Export folder");
-        ImageView editImageView = new ImageView(new Image(getClass().getResourceAsStream("icons/folder.png")));
+        Button buttonSetBackup = new Button("Export");
+        ImageView editImageView = new ImageView(new Image(getClass().getResourceAsStream("icons/folder-open-o.png")));
         buttonSetBackup.setGraphic(editImageView);
 
 
@@ -377,8 +378,8 @@ public class Main extends Application {
 
 
         //Creating button4
-        Button buttonLoadBackup = new Button("Load backup");
-        Image image5 = new Image(getClass().getResourceAsStream("icons/download-outline.png"));
+        Button buttonLoadBackup = new Button("Backup");
+        Image image5 = new Image(getClass().getResourceAsStream("icons/inbox.png"));
         buttonLoadBackup.setGraphic(new ImageView(image5));
 
         buttonLoadBackup.setOnAction(
@@ -420,7 +421,7 @@ public class Main extends Application {
         ObservableList list = buttonBox.getChildren();
         buttonBox.setMargin(buttonStartStop, new Insets(10, 0, 10, 10));
 
-        list.addAll(buttonStartStop, buttonAddRunners, buttonReport, buttonSetBackup, buttonLoadBackup);
+        list.addAll(buttonStartStop, buttonAddRunners, buttonSetBackup, buttonReport, buttonLoadBackup);
 
         return buttonBox;
     }
