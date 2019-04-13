@@ -1,5 +1,6 @@
 package model;
 
+import javafx.scene.control.Label;
 import util.RaceUtil;
 
 import java.io.BufferedReader;
@@ -11,6 +12,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static gui.Main.LOAD_RUNNER;
 
 public class Runner {
 
@@ -123,7 +126,7 @@ public class Runner {
 
             return new RunnerTime(id, time);
         } else {
-            RaceUtil.printError("Import runner " + line + " failed.");
+            RaceUtil.pushErrorNotification(LOAD_RUNNER,"Import runner " + line + " failed.");
             return null;
         }
     }
@@ -149,7 +152,7 @@ public class Runner {
 
             return new Runner(id, firstName, lastName, gender, birthDate, age, category, club, false);
         } else {
-            RaceUtil.printError("Import runner " + line + " failed.");
+            RaceUtil.pushErrorNotification(LOAD_RUNNER, "Import runner " + line + " failed.");
             return null;
         }
 

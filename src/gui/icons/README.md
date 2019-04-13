@@ -1,102 +1,75 @@
-Typicons
-----
+[![npm version](https://badgen.net/npm/v/@vaadin/vaadin-icons)](https://www.npmjs.com/package/@vaadin/vaadin-icons)
+[![Bower version](https://badgen.net/github/release/vaadin/vaadin-icons)](https://github.com/vaadin/vaadin-icons/releases)
+[![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/vaadin/vaadin-icons)
+[![Build status](https://travis-ci.org/vaadin/vaadin-icons.svg?branch=master)](https://travis-ci.org/vaadin/vaadin-icons)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/vaadin/web-components?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Visit the [website](http://typicons.com/) for information on how to use Typicons on your website, a decription of how the font was made and more resources. If you wish to contact me regarding Typicons you can hit me up on [Twitter](http://twitter.com/typicons/).
+[![Published on Vaadin Directory](https://img.shields.io/badge/Vaadin%20Directory-published-00b4f0.svg)](https://vaadin.com/directory/component/vaadinvaadin-icons)
+[![Stars on vaadin.com/directory](https://img.shields.io/vaadin-directory/star/vaadinvaadin-icons.svg)](https://vaadin.com/directory/component/vaadinvaadin-icons)
 
-Using Typicons
-----
+# Vaadin Icons
 
-Typicons can be easily installed with [bower](http://www.bower.io/)...
+[<img src="https://raw.github.com/vaadin/vaadin-icons/master/screenshot.png" width="611" alt="Screenshot of some icons in the Vaadin Icons collection" />](https://vaadin.com/icons)
 
-```bash
-$ bower install typicons
+
+[Vaadin Icons](https://vaadin.com/icons) is a set of 600+ icons designed for web applications. Free to use, anywhere!
+
+Visit **https://vaadin.com/icons** for more information and instructions how to get started using them.
+
+## Installation
+
+The Vaadin components are distributed as Bower and npm packages.
+Please note that the version range is the same, as the API has not changed.
+You should not mix Bower and npm versions in the same application, though.
+
+Unlike the official Polymer Elements, the converted Polymer 3 compatible Vaadin components
+are only published on npm, not pushed to GitHub repositories.
+
+### Polymer 2 and HTML Imports compatible version
+
+Install `vaadin-icons`:
+
+```sh
+bower i vaadin/vaadin-icons --save
 ```
 
-...or NPM.
+Once installed, import it in your application:
 
-```bash
-$ npm install typicons.font
+```html
+<link rel="import" href="bower_components/vaadin-icons/vaadin-icons.html">
 ```
 
-Otherwise, the font and minified CSS can be found in [src/font/](https://github.com/stephenhutchings/typicons.font/tree/master/src/font).
+### Polymer 3 and ES Modules compatible version
 
-SVG source files can be found in [src/svg/](https://github.com/stephenhutchings/typicons.font/tree/master/src/svg).
+Install `vaadin-icons`:
 
-If you're looking to use Typicons on iOS, you can find support [here](https://github.com/javaboyjunior/typicon-ios) thanks to [@javaboyjunior](https://github.com/javaboyjunior).
+```sh
+npm i @vaadin/vaadin-icons --save
+```
 
-Info
-----
+Once installed, import it in your application:
 
-What's new in Typicons
+```js
+import '@vaadin/vaadin-icons/vaadin-icons.js';
+```
 
-#### Version 2.0.9
-- Add source SVG files to `package.json`.
 
-#### Version 2.0.8
-- Fix `package.json` files entry for NPM.
+## Running demos in browser
 
-#### Version 2.0.7
-- Removed SVG ignores from Bower package for developer use.
+1. Install [polymer-cli](https://www.npmjs.com/package/polymer-cli): `npm install -g polymer-cli`
 
-#### Version 2.0.6
-- This release fixes misspelled icons calendar and calendar-outline (Issue #9), renames incorrectly labelled cross to cloud-storage-outline (Issue #5) and adds search terms for many icons to make it easier to find the icon your looking for. It also adds higher decimal rounding for the social-youtube-circular icon to correct some node degradation in the SVG file.
+1. When in the `vaadin-icons` directory, run `bower install` to install Bower dependencies
 
-#### Version 2.0.5
-- Added non-minified CSS to Bower.
+1. Run `npm start`, after that you will be able to access:
 
-#### Version 2.0.4
-- Font files are now licenced using the [SIL Open Font Licence](http://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web). This means that the font can be used, studied, modified and
-redistributed freely as long as they are not sold by themselves.
+  - http://127.0.0.1:3000/components/vaadin-icons/demo
 
-#### Version 2.0.3
-- Added new icons including:
-  - Sort down, sort up and unsorted
-  - Filter
-  - Social: Instagram, YouTube and Google Plus
-  - Vendors: Apple, Microsoft and Google
-  - Dropbox
-  - Half and full hearts
-  - Half and full stars
-  - Reverse play
-  - Thumbs OK
-  - CSS3 and HTML5
-  - Folder open
-  - Mortar board
-  - Spiral
 
-#### Version 2.0.2
-- Fixed support for IE 8 by replacing double colon with single in `::before`
+## License
 
-#### Version 2.0.1
+The icon files (SVG, PNG, fonts) are licensed under Creative Commons [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
 
-- Added bower support
-- Removed EPS for smaller repo size (contact me if you want to get them)
+The source code in this repository is licensed under Apache License 2.0.
 
-#### Version 2.0.0
-
-- Added 220 new icons, including outline variants
-- Improved quality of vector artwork
-- Mapped in the Private Use Area of Unicode to avoid being read by screen readers
-- Rehinted with `ttfautohint`
-- Grouped glyphs on demo page, for convenience
-- Changed css glyphs names, to be more semantic
-
-License
--------
-
-#### Icons/Artwork
-
-Distributed under
-[CC BY-SA](http://creativecommons.org/licenses/by-sa/3.0/) licence.
-
-#### Font
-
-Distributed under
-[SIL Open Font Licence](http://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web) licence.
-
-Other
--------
-
-#### Scripting
-
-This project uses [font-builder](https://github.com/fontello/font-builder) scripts to generate data. See DEVELOPMENT.MD for more information on how to build the font.
+All brand icons are trademarks of their respective owners.
+The use of these trademarks does not indicate endorsement of the trademark holder by Vaadin Icons, nor vice versa.

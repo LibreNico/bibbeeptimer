@@ -1,7 +1,7 @@
 package util;
 
+import gui.Main;
 import model.Runner;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -65,6 +65,7 @@ public class RaceUtil {
     "</html>";
 
     private static final String TABLE_FOOTER = "</table>\n";
+    private static final String CREATE_FILE = "Create file";
 
     public static float SAMPLE_RATE = 8000f;
 
@@ -123,13 +124,20 @@ public class RaceUtil {
         }
     }
 
-    public static void printError(String msg) {
-        System.out.println("[ERROR] "+msg);
+    public static void pushErrorNotification(String title, String msg) {
+        pushNotification(title, msg,true);
     }
 
-    public static void printInfo(String msg) {
-        System.out.println("[INFO] "+msg);
+    public static void pushInfoNotification(String title, String msg) {
+        pushNotification(title, msg,false);
     }
+
+    private static void pushNotification(String title, String msg, boolean isError) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        String formatTime = LocalDateTime.now().format(formatter);
+        Main.TEXT_NOTIFICATION.setText((isError?"[ERROR]":"[INFO]")+"["+title+" - "+ formatTime +"] "+msg);
+    }
+
 
 
     public static void backupData(String inputScan, BufferedWriter writer) {
@@ -157,14 +165,15 @@ public class RaceUtil {
     public static BufferedWriter createBufferWriter(String backupPath, String uniqueName)  {
 
 
+        String pathname = backupPath + uniqueName ;
         try {
-            String pathname = backupPath + uniqueName ;
-            printInfo("Backup file: "+pathname);
+            pushInfoNotification( CREATE_FILE, "Report/Backup file: "+pathname);
             File yourFile = new File(pathname);
             yourFile.createNewFile();
 
             return Files.newBufferedWriter(Paths.get(yourFile.getPath()));
         } catch (IOException ioException) {
+            pushErrorNotification(CREATE_FILE, "Error create file: "+pathname+" because "+ioException.getMessage());
             ioException.printStackTrace();
         }
 
@@ -176,12 +185,24 @@ public class RaceUtil {
             try {
                 backupWriter.close();
             } catch (IOException ioException) {
+                pushErrorNotification("Close file", "Error closing file: "+ioException.getMessage());
                 ioException.printStackTrace();
             }
         }
     }
 
 
+    public static boolean isCSVFile(File file) {
+
+        String extension = "";
+
+        int i = file.getName().lastIndexOf('.');
+        if (i > 0) {
+            extension = file.getName().substring(i + 1);
+        }
+
+        return extension.equalsIgnoreCase("csv");
+    }
 
 
     public static String exportHTMLFile(String pathReport, List<Runner> listRace, boolean isByCatgory) throws IOException {
@@ -243,7 +264,7 @@ public class RaceUtil {
             writer.write(HTML_FOOTER);
         }
 
-        return pathReport + uniqueName;
+        return uniqueName;
     }
 
 }
