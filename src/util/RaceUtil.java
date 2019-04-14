@@ -2,6 +2,7 @@ package util;
 
 import gui.Main;
 import model.Runner;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -27,8 +28,8 @@ public class RaceUtil {
     public static final String CSV_EXTENSION = ".csv";
     public static final String BACKUP_PREFIX = "/bibbeep_backup_";
     private static final String HTML_EXTENSION = ".html";
-    private static final String REPORT_ALL_PREFIX = "/bibbeep_report_all";
-    private static final String REPORT_CATEGORY_PREFIX = "/bibbeep_report_category";
+    public static final String REPORT_ALL_PREFIX = "bibbeep_report_all";
+    public static final String REPORT_CATEGORY_PREFIX = "bibbeep_report_category";
 
     private static final String HTML_HEADER =
             "<!DOCTYPE html>\n" +
@@ -51,7 +52,7 @@ public class RaceUtil {
                     "}\n" +
                     "</style>\n" +
                     "</head>\n" +
-                    "<body>\n" ;
+                    "<body>\n";
     private static final String TABLE_HEADER = "<table>\n" +
             "  <tr>\n" +
             "    <th width=\"7%\">Pos.</th>\n" +
@@ -62,7 +63,7 @@ public class RaceUtil {
             "    <th width=\"6%\">Gender</th>\n" +
             "  </tr>";
     private static final String HTML_FOOTER = "</body>\n" +
-    "</html>";
+            "</html>";
 
     private static final String TABLE_FOOTER = "</table>\n";
     private static final String CREATE_FILE = "Create file";
@@ -70,8 +71,7 @@ public class RaceUtil {
     public static float SAMPLE_RATE = 8000f;
 
     public static void tone(int hz, int msecs, double vol)
-            throws LineUnavailableException
-    {
+            throws LineUnavailableException {
         byte[] buf = new byte[1];
         AudioFormat af =
                 new AudioFormat(
@@ -83,19 +83,17 @@ public class RaceUtil {
         SourceDataLine sdl = AudioSystem.getSourceDataLine(af);
         sdl.open(af);
         sdl.start();
-        for (int i=0; i < msecs*8; i++) {
+        for (int i = 0; i < msecs * 8; i++) {
             double angle = i / (SAMPLE_RATE / hz) * 2.0 * Math.PI;
-            buf[0] = (byte)(Math.sin(angle) * 127.0 * vol);
-            sdl.write(buf,0,1);
+            buf[0] = (byte) (Math.sin(angle) * 127.0 * vol);
+            sdl.write(buf, 0, 1);
         }
         sdl.drain();
         sdl.stop();
         sdl.close();
     }
 
-    public static void tone(int hz, int msecs)
-
-    {
+    public static void tone(int hz, int msecs) {
         try {
             tone(hz, msecs, 1.0);
         } catch (LineUnavailableException e) {
@@ -125,26 +123,25 @@ public class RaceUtil {
     }
 
     public static void pushErrorNotification(String title, String msg) {
-        pushNotification(title, msg,true);
+        pushNotification(title, msg, true);
     }
 
     public static void pushInfoNotification(String title, String msg) {
-        pushNotification(title, msg,false);
+        pushNotification(title, msg, false);
     }
 
     private static void pushNotification(String title, String msg, boolean isError) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         String formatTime = LocalDateTime.now().format(formatter);
-        Main.TEXT_NOTIFICATION.setText((isError?"[ERROR]":"[INFO]")+"["+title+" - "+ formatTime +"] "+msg);
+        Main.TEXT_NOTIFICATION.setText((isError ? "[ERROR]" : "[INFO]") + "[" + title + " - " + formatTime + "] " + msg);
     }
-
 
 
     public static void backupData(String inputScan, BufferedWriter writer) {
 
-        if(writer != null){
+        if (writer != null) {
             try {
-                writer.write(inputScan+"\n");
+                writer.write(inputScan + "\n");
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
@@ -159,21 +156,21 @@ public class RaceUtil {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMdd_HHmmss");
         String formatTime = LocalDateTime.now().format(formatter);
-        return  prefix + formatTime + extension;
+        return prefix + formatTime + extension;
     }
 
-    public static BufferedWriter createBufferWriter(String backupPath, String uniqueName)  {
+    public static BufferedWriter createBufferWriter(String backupPath, String uniqueName) {
 
 
-        String pathname = backupPath + uniqueName ;
+        String pathname = backupPath + uniqueName;
         try {
-            pushInfoNotification( CREATE_FILE, "Report/Backup file: "+pathname);
+            pushInfoNotification(CREATE_FILE, "Report/Backup file: " + pathname);
             File yourFile = new File(pathname);
             yourFile.createNewFile();
 
             return Files.newBufferedWriter(Paths.get(yourFile.getPath()));
         } catch (IOException ioException) {
-            pushErrorNotification(CREATE_FILE, "Error create file: "+pathname+" because "+ioException.getMessage());
+            pushErrorNotification(CREATE_FILE, "Error create file: " + pathname + " because " + ioException.getMessage());
             ioException.printStackTrace();
         }
 
@@ -181,11 +178,11 @@ public class RaceUtil {
     }
 
     public static void closeBackup(BufferedWriter backupWriter) {
-        if(backupWriter != null){
+        if (backupWriter != null) {
             try {
                 backupWriter.close();
             } catch (IOException ioException) {
-                pushErrorNotification("Close file", "Error closing file: "+ioException.getMessage());
+                pushErrorNotification("Close file", "Error closing file: " + ioException.getMessage());
                 ioException.printStackTrace();
             }
         }
@@ -204,11 +201,19 @@ public class RaceUtil {
         return extension.equalsIgnoreCase("csv");
     }
 
+    public static String exportHTMLReportByCategory(String pathReport, List<Runner> listRace) throws IOException {
+        return exportHTMLFile(pathReport, listRace, true);
+    }
 
-    public static String exportHTMLFile(String pathReport, List<Runner> listRace, boolean isByCatgory) throws IOException {
+    public static String exportHTMLReportByTime(String pathReport, List<Runner> listRace) throws IOException {
+        return exportHTMLFile(pathReport, listRace, false);
+    }
 
 
-        String uniqueName = createUniqueNameFile(isByCatgory?REPORT_CATEGORY_PREFIX:REPORT_ALL_PREFIX, HTML_EXTENSION);
+    private static String exportHTMLFile(String pathReport, List<Runner> listRace, boolean isByCatgory) throws IOException {
+
+
+        String uniqueName = createUniqueNameFile("/" + (isByCatgory ? REPORT_CATEGORY_PREFIX : REPORT_ALL_PREFIX), HTML_EXTENSION);
 
 
         Comparator<Runner> byTime = Comparator.comparing(Runner::getTime);

@@ -31,8 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static util.RaceUtil.BACKUP_PREFIX;
-import static util.RaceUtil.CSV_EXTENSION;
+import static util.RaceUtil.*;
 
 //TODO need a refactoring too long and not MVC!
 public class Main extends Application {
@@ -45,7 +44,7 @@ public class Main extends Application {
     public static final String LOAD_RUNNER = "Load runners";
     public static final String REPORT_TITLE = "Report";
     private static final String BIB_SCANNING_TITLE = "Bib scanning";
-    private static final String LABEL_WITH_CHECK_DIGIT = " with last (check) digit?";
+    private static final String LABEL_WITH_CHECK_DIGIT = " with last digit in the bib race?";
 
     //TODO make a model
     Set<String> alreadyBeeped = new HashSet<>();
@@ -124,6 +123,8 @@ public class Main extends Application {
 
         ObservableList list = infoBox.getChildren();
 
+        //TODO number of runners scanned
+
         importedRunnersLabel = new Label(LABEL_RUNNERS + mapIdRunner.size() + LABEL_WITH_CHECK_DIGIT);
         RaceUtil.pushInfoNotification(LABEL_BACKUP, backupPath);
         removeLastDigitLabel = new CheckBox();
@@ -142,6 +143,10 @@ public class Main extends Application {
                 if (key.getCode() == KeyCode.ENTER) {
                     String bib = inputKeyBordBuffer.toString();
 
+                    if(!removeLastDigitLabel.isSelected()){
+                        bib = bib.substring(0, bib.length() - 1);
+                    }
+
 
                     if ((!removeLastDigitLabel.isSelected() && bib.length() < 2)
                             || (removeLastDigitLabel.isSelected() && bib.length() < 1)) {
@@ -151,11 +156,6 @@ public class Main extends Application {
                     } else if (alreadyBeeped.contains(bib)) {
                         RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " already scan.");
                     } else {
-
-                        if(!removeLastDigitLabel.isSelected()){
-                            bib = bib.substring(0, bib.length() - 1);
-                        }
-
                         String time = timerLabel.getText();
                         mapIdTime.put(bib, time);
                         updateListFinisher(bib, time);
@@ -235,6 +235,8 @@ public class Main extends Application {
         ImageView imageStop = new ImageView(new Image(getClass().getResourceAsStream("icons/stop.png")));
         buttonStartStop.setGraphic(imageStart);
 
+        //TODO button mapIdTime.clear();
+
 
         buttonStartStop.setOnAction(e -> {
             if (buttonStartStop.getText().equals("Start")) {
@@ -245,7 +247,7 @@ public class Main extends Application {
                 timeline.play();
                 uniqueNameFile = RaceUtil.createUniqueNameFile(BACKUP_PREFIX, CSV_EXTENSION);
                 backupWriter = RaceUtil.createBufferWriter(backupPath, uniqueNameFile);
-
+                RaceUtil.pushInfoNotification("Race started", "You can start scanning bib code bar or type in the numbers follow by a return to line.");
             } else {
 
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -263,7 +265,6 @@ public class Main extends Application {
                     alreadyBeeped.clear();
                     RaceUtil.closeBackup(backupWriter);
                     RaceUtil.pushInfoNotification("Race stopped", "Backup store in " + backupPath + uniqueNameFile);
-
                 }
 
             }
@@ -321,9 +322,9 @@ public class Main extends Application {
             }
 
             try {
-                String reportByCat = RaceUtil.exportHTMLFile(backupPath, listRace, true);
-                String reportAll = RaceUtil.exportHTMLFile(backupPath, listRace, false);
-                RaceUtil.pushInfoNotification("Report created", reportByCat+" and "+reportAll + " in "+backupPath);
+               RaceUtil.exportHTMLReportByTime(backupPath, listRace);
+               RaceUtil.exportHTMLReportByCategory(backupPath, listRace);
+               RaceUtil.pushInfoNotification("Report created", REPORT_ALL_PREFIX+" and "+REPORT_CATEGORY_PREFIX + " exported in "+backupPath);
             } catch (IOException e1) {
                 RaceUtil.pushErrorNotification(REPORT_TITLE, "Export report failde: " + e1.getMessage());
                 e1.printStackTrace();
