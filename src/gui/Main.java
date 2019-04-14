@@ -3,7 +3,6 @@ package gui;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -41,10 +40,11 @@ public class Main extends Application {
     public static final String LABEL_RUNNERS = "Imported runners ";
     public static final String LABEL_BACKUP = "Backup/report folder";
     public static final String LOAD_BACKUP = "Load backup";
-    public static final String LOAD_RUNNER = "Load runners";
+    public static final String LOAD_RUNNER = "Loaded runners ";
     public static final String REPORT_TITLE = "Report";
     private static final String BIB_SCANNING_TITLE = "Bib scanning";
-    private static final String LABEL_WITH_CHECK_DIGIT = " with last digit in the bib race?";
+    private static final String LABEL_WITH_CHECK_DIGIT = "Take last digit of the bib race";
+    private static final String LABEL_BIB = "Bib race scanned ";
 
     //TODO make a model
     Set<String> alreadyBeeped = new HashSet<>();
@@ -58,7 +58,6 @@ public class Main extends Application {
 
     private Timeline timeline;
     private final FileChooser fileChooser = new FileChooser();
-    private static StringBuilder inputKeyBordBuffer = new StringBuilder();
     private ListView<Object> listFinisher;
     private BufferedWriter backupWriter;
     private Label timerLabel;
@@ -67,6 +66,8 @@ public class Main extends Application {
     private String backupPath = System.getProperty("user.home");
     private String uniqueNameFile;
     public static final Label TEXT_NOTIFICATION = new Label("Here will come notifications...");
+    private TextField bibScanInput;
+    private Label runnersScannedLabel;
 
 
     @Override
@@ -78,13 +79,15 @@ public class Main extends Application {
 
 
         Scene scene = new Scene(bPane);
-        handelKeyBord(scene);
 
         stage.setTitle(APP_TITLE);
         stage.setScene(scene);
 
         stage.setMinWidth(700);
         stage.setMinHeight(500);
+
+        bibScanInput.requestFocus();
+
 
         stage.show();
 
@@ -96,10 +99,74 @@ public class Main extends Application {
         vBox.setAlignment(Pos.CENTER);
         vBox.setSpacing(5);
 
-        ObservableList list = vBox.getChildren();
-        list.addAll(createHeaderButtons(stage), createStopWatch(), createInfoBox(), createNotificationBox());
+        Node infoBox = createInfoBox();
+        Node notificationBox = createNotificationBox();
+
+        vBox.setMargin(infoBox, new Insets(0, 10, 0, 10));
+        vBox.setMargin(notificationBox, new Insets(0, 10, 0, 10));
+
+        vBox.getChildren().addAll(createHeaderButtons(stage), createStopWatch(), infoBox, notificationBox, createBibScan());
 
         return vBox;
+    }
+
+    private Node createBibScan() {
+        HBox scanBox = new HBox();
+        scanBox.setAlignment(Pos.CENTER);
+        scanBox.setSpacing(5);
+
+        bibScanInput = new TextField();
+        bibScanInput.setPrefWidth(250);
+        bibScanInput.setTooltip(new Tooltip("Enter a bib race number"));
+        bibScanInput.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
+            if (key.getCode() == KeyCode.ENTER) {
+                readBibNumber();
+            }
+        });
+
+        Button enter = new Button("Enter");
+        enter.setOnAction(e -> readBibNumber());
+
+        scanBox.getChildren().addAll(bibScanInput, enter);
+        return scanBox;
+    }
+
+
+    private void readBibNumber() {
+        if (hasRaceStarted) {
+
+            String bib = bibScanInput.getText();
+
+            if (!removeLastDigitLabel.isSelected()) {
+                bib = bib.substring(0, bib.length() - 1);
+            }
+
+
+            if ((!removeLastDigitLabel.isSelected() && bib.length() < 2)
+                    || (removeLastDigitLabel.isSelected() && bib.length() < 1)) {
+                RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " is not long enough.");
+            } else if (!RaceUtil.isNumeric(bib)) {
+                RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " is not numeric.");
+            } else if (alreadyBeeped.contains(bib)) {
+                RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " already scan.");
+            } else {
+                String time = timerLabel.getText();
+                mapIdTime.put(bib, time);
+                runnersScannedLabel.setText(LABEL_BIB + mapIdTime.size() + " | ");
+                updateListFinisher(bib, time);
+                alreadyBeeped.add(bib);
+                String data = bib + ";" + time;
+                //RaceUtil.printInfo(BIB_SCANNING_TITLE, "Bib scan: " + data);
+                RaceUtil.backupData(data, backupWriter);
+            }
+
+            bibScanInput.setText("");
+
+        } else {
+            RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Race has not started.");
+
+        }
+        bibScanInput.requestFocus();
     }
 
     private Node createNotificationBox() {
@@ -108,12 +175,9 @@ public class Main extends Application {
         infoBox.setBorder(new Border(new BorderStroke(Color.BLACK,
                 BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
-        ObservableList list = infoBox.getChildren();
+        ImageView imageNotification = new ImageView(new Image(getClass().getResourceAsStream("icons/bell-o.png")));
 
-        ImageView imageNotif = new ImageView(new Image(getClass().getResourceAsStream("icons/bell-o.png")));
-
-
-        list.addAll(imageNotif, TEXT_NOTIFICATION);
+        infoBox.getChildren().addAll(imageNotification, TEXT_NOTIFICATION);
         return infoBox;
     }
 
@@ -121,59 +185,17 @@ public class Main extends Application {
         HBox infoBox = new HBox();
         infoBox.setSpacing(5);
 
-        ObservableList list = infoBox.getChildren();
-
-        //TODO number of runners scanned
-
-        importedRunnersLabel = new Label(LABEL_RUNNERS + mapIdRunner.size() + LABEL_WITH_CHECK_DIGIT);
         RaceUtil.pushInfoNotification(LABEL_BACKUP, backupPath);
-        removeLastDigitLabel = new CheckBox();
+
+        importedRunnersLabel = new Label(LABEL_RUNNERS + mapIdRunner.size() + " | ");
+        runnersScannedLabel = new Label(LABEL_BIB + mapIdTime.size() + " | ");
+
+        removeLastDigitLabel = new CheckBox(LABEL_WITH_CHECK_DIGIT);
         removeLastDigitLabel.setSelected(true);
-        removeLastDigitLabel.setTooltip(new Tooltip("The scanning system take all digit from the bib or remove the last one?"));
+        removeLastDigitLabel.setTooltip(new Tooltip("The scanning system take all digit from the bib or remove the last one (check digit)?"));
 
-        list.addAll(importedRunnersLabel ,removeLastDigitLabel);
+        infoBox.getChildren().addAll(importedRunnersLabel, runnersScannedLabel, removeLastDigitLabel);
         return infoBox;
-    }
-
-    private void handelKeyBord(Scene scene) {
-        scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
-
-            if (hasRaceStarted) {
-
-                if (key.getCode() == KeyCode.ENTER) {
-                    String bib = inputKeyBordBuffer.toString();
-
-                    if(!removeLastDigitLabel.isSelected()){
-                        bib = bib.substring(0, bib.length() - 1);
-                    }
-
-
-                    if ((!removeLastDigitLabel.isSelected() && bib.length() < 2)
-                            || (removeLastDigitLabel.isSelected() && bib.length() < 1)) {
-                        RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " is not long enough.");
-                    }else if (!RaceUtil.isNumeric(bib)) {
-                        RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE,"Scanned input " + bib + " is not numeric.");
-                    } else if (alreadyBeeped.contains(bib)) {
-                        RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " already scan.");
-                    } else {
-                        String time = timerLabel.getText();
-                        mapIdTime.put(bib, time);
-                        updateListFinisher(bib, time);
-                        alreadyBeeped.add(bib);
-                        String data = bib + ";" + time;
-                        //RaceUtil.printInfo(BIB_SCANNING_TITLE, "Bib scan: " + data);
-                        RaceUtil.backupData(data, backupWriter);
-                    }
-
-                    inputKeyBordBuffer.setLength(0);
-
-
-                } else {
-                    inputKeyBordBuffer.append(key.getText());
-                }
-
-            }
-        });
     }
 
     private void updateListFinisher(String bib, String time) {
@@ -181,10 +203,9 @@ public class Main extends Application {
             listFinisher.getItems().add(mapIdRunner.get(bib).getName() + " - " + time);
         } else {
             listFinisher.getItems().add(bib + " - " + time);
-            RaceUtil.pushErrorNotification(LOAD_RUNNER,"Runner with bib " + bib + " not found!");
+            RaceUtil.pushErrorNotification(LOAD_RUNNER, "Runner with bib " + bib + " not found!");
         }
     }
-
 
 
     private Label createStopWatch() {
@@ -207,16 +228,16 @@ public class Main extends Application {
             secs = 0;
         }
 
-        if(mins==60){
+        if (mins == 60) {
             hours++;
-            mins=0;
+            mins = 0;
         }
 
         text.setText(
-                  (((hours / 10) == 0) ? "0" : "") + hours + ":"
-                + (((mins / 10) == 0) ? "0" : "") + mins + ":"
-                + (((secs / 10) == 0) ? "0" : "") + secs + "."
-                + (((millis / 10) == 0) ? "00" : (((millis / 100) == 0) ? "0" : "")) + millis++
+                (((hours / 10) == 0) ? "0" : "") + hours + ":"
+                        + (((mins / 10) == 0) ? "0" : "") + mins + ":"
+                        + (((secs / 10) == 0) ? "0" : "") + secs + "."
+                        + (((millis / 10) == 0) ? "00" : (((millis / 100) == 0) ? "0" : "")) + millis++
         );
     }
 
@@ -236,7 +257,6 @@ public class Main extends Application {
         buttonStartStop.setGraphic(imageStart);
 
         //TODO button mapIdTime.clear();
-
 
         buttonStartStop.setOnAction(e -> {
             if (buttonStartStop.getText().equals("Start")) {
@@ -268,6 +288,8 @@ public class Main extends Application {
                 }
 
             }
+
+            bibScanInput.requestFocus();
         });
 
         Button buttonAddRunners = new Button("Runner");
@@ -285,7 +307,7 @@ public class Main extends Application {
                         if (RaceUtil.isCSVFile(file)) {
 
                             if (Runner.loadRunnerCsvFile(file, mapIdRunner)) {
-                                importedRunnersLabel.setText(LABEL_RUNNERS + mapIdRunner.size() + LABEL_WITH_CHECK_DIGIT);
+                                importedRunnersLabel.setText(LABEL_RUNNERS + mapIdRunner.size() + " | ");
                             } else {
                                 RaceUtil.pushErrorNotification(LOAD_RUNNER, "Parsing error while reading: " + file.getName());
                             }
@@ -295,7 +317,8 @@ public class Main extends Application {
                         }
 
                     }
-         });
+                    bibScanInput.requestFocus();
+                });
 
         Button buttonReport = new Button(REPORT_TITLE);
         Image imagePrint = new Image(getClass().getResourceAsStream("icons/print.png"));
@@ -305,15 +328,15 @@ public class Main extends Application {
         buttonReport.setOnAction(e -> {
 
             List<Runner> listRace = new ArrayList<>();
-            for(String bib: mapIdTime.keySet()){
+            for (String bib : mapIdTime.keySet()) {
 
                 Runner runner;
-                if(mapIdRunner.containsKey(bib)){
+                if (mapIdRunner.containsKey(bib)) {
                     runner = mapIdRunner.get(bib);
                     runner.setTime(mapIdTime.get(bib));
 
-                }else{
-                    RaceUtil.pushErrorNotification(REPORT_TITLE,"Runner with bib " + bib + " not found!");
+                } else {
+                    RaceUtil.pushErrorNotification(REPORT_TITLE, "Runner with bib " + bib + " not found!");
                     runner = new Runner(bib, mapIdTime.get(bib));
                 }
 
@@ -322,13 +345,15 @@ public class Main extends Application {
             }
 
             try {
-               RaceUtil.exportHTMLReportByTime(backupPath, listRace);
-               RaceUtil.exportHTMLReportByCategory(backupPath, listRace);
-               RaceUtil.pushInfoNotification("Report created", REPORT_ALL_PREFIX+" and "+REPORT_CATEGORY_PREFIX + " exported in "+backupPath);
+                RaceUtil.exportHTMLReportByTime(backupPath, listRace);
+                RaceUtil.exportHTMLReportByCategory(backupPath, listRace);
+                RaceUtil.pushInfoNotification("Report created", REPORT_ALL_PREFIX + " and " + REPORT_CATEGORY_PREFIX + " exported in " + backupPath);
             } catch (IOException e1) {
                 RaceUtil.pushErrorNotification(REPORT_TITLE, "Export report failde: " + e1.getMessage());
                 e1.printStackTrace();
             }
+
+            bibScanInput.requestFocus();
         });
 
 
@@ -348,9 +373,10 @@ public class Main extends Application {
                     File selectedDirectory = chooser.showDialog(stage);
                     if (selectedDirectory != null) {
                         backupPath = selectedDirectory.getAbsolutePath();
-                        RaceUtil.pushInfoNotification(LABEL_BACKUP,  backupPath);
+                        RaceUtil.pushInfoNotification(LABEL_BACKUP, backupPath);
                     }
 
+                    bibScanInput.requestFocus();
                 });
 
         Button buttonLoadBackup = new Button("Backup");
@@ -371,24 +397,24 @@ public class Main extends Application {
                                 listFinisher.getItems().clear();
                                 mapIdTime.forEach(this::updateListFinisher);
                             } else {
-                                RaceUtil.pushErrorNotification(LOAD_BACKUP,"Parsing error while reading: " + file.getName());
+                                RaceUtil.pushErrorNotification(LOAD_BACKUP, "Parsing error while reading: " + file.getName());
                             }
 
                         } else {
-                            RaceUtil.pushErrorNotification(LOAD_BACKUP,"The selected file is not CSV format: " + file.getName());
+                            RaceUtil.pushErrorNotification(LOAD_BACKUP, "The selected file is not CSV format: " + file.getName());
                         }
 
                     }
+
+                    bibScanInput.requestFocus();
                 });
 
         HBox buttonBox = new HBox();
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setSpacing(5);
 
-        ObservableList list = buttonBox.getChildren();
         buttonBox.setMargin(buttonStartStop, new Insets(10, 0, 10, 10));
-
-        list.addAll(buttonStartStop, buttonAddRunners, buttonSetBackup, buttonReport, buttonLoadBackup);
+        buttonBox.getChildren().addAll(buttonStartStop, buttonAddRunners, buttonSetBackup, buttonReport, buttonLoadBackup);
 
         return buttonBox;
     }
