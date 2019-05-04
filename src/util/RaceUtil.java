@@ -26,47 +26,31 @@ public class RaceUtil {
 
 
     public static final String CSV_EXTENSION = ".csv";
-    public static final String BACKUP_PREFIX = "/bibbeep_backup_";
+    public static final String BACKUP_PREFIX = "/bb_backup_";
     private static final String HTML_EXTENSION = ".html";
-    public static final String REPORT_ALL_PREFIX = "bibbeep_report_all";
-    public static final String REPORT_CATEGORY_PREFIX = "bibbeep_report_category";
+    public static final String REPORT_ALL_PREFIX = "/bb_report";
+    public static final String REPORT_CATEGORY_PREFIX = "/bb_reportByCategory";
 
     private static final String HTML_HEADER =
-            "<!DOCTYPE html>\n" +
-                    "<html>\n" +
-                    "<head>\n" +
-                    "<meta charset=\"UTF-8\">\n" +
-                    "<style>\n" +
-                    "table, td, th {    \n" +
-                    "    border: 1px solid #ddd;\n" +
-                    "    text-align: left;\n" +
-                    "}\n" +
-                    "\n" +
-                    "table {\n" +
-                    "    border-collapse: collapse;\n" +
-                    "    width: 100%;\n" +
-                    "}\n" +
-                    "\n" +
-                    "th, td {\n" +
-                    "    padding: 15px;\n" +
-                    "}\n" +
-                    "</style>\n" +
-                    "</head>\n" +
-                    "<body>\n";
-    private static final String TABLE_HEADER = "<table>\n" +
-            "  <tr>\n" +
-            "    <th width=\"7%\">Pos.</th>\n" +
-            "    <th width=\"7%\">Num.</th>\n" +
-            "    <th width=\"30%\">Nom|Naam</th>\n" +
-            "    <th width=\"20%\">Temps|Tijd</th>\n" +
-            "    <th width=\"26%\">Club</th>\n" +
-            "    <th width=\"6%\">Gender</th>\n" +
-            "  </tr>";
-    private static final String HTML_FOOTER = "</body>\n" +
-            "</html>";
+            "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>" +
+                    "#result { font-family: \"Trebuchet MS\", Arial, Helvetica, sans-serif; border-collapse: collapse; width: 100%; } " +
+                    "#result td, #result th { border: 1px solid #ddd; padding: 3px; }" +
+                    "#result tr:nth-child(even){background-color: #f2f2f2;}" +
+                    "#result tr:hover {background-color: #ddd;}" +
+                    "#result th { text-align: left; background-color: #1d1db9; color: white;}" +
+                    "</style></head><body>";
+    private static final String TABLE_HEADER = "<table id=\"result\"><tr>" +
+            "<th width=\"7%\">Pos.</th>" +
+            "<th width=\"7%\">Nr.</th>" +
+            "<th width=\"30%\">Name</th>" +
+            "<th width=\"20%\">Time</th>" +
+            "<th width=\"26%\">Team</th>" +
+            "<th width=\"6%\">Gender</th></tr>";
+    private static final String HTML_FOOTER = "</body></html>";
 
-    private static final String TABLE_FOOTER = "</table>\n";
+    private static final String TABLE_FOOTER = "</table>";
     private static final String CREATE_FILE = "Create file";
+    public static final String NO_CATGORY = "aucune/geen";
 
     public static float SAMPLE_RATE = 8000f;
 
@@ -153,10 +137,15 @@ public class RaceUtil {
     }
 
     public static String createUniqueNameFile(String prefix, String extension) {
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMdd_HHmmss");
         String formatTime = LocalDateTime.now().format(formatter);
         return prefix + formatTime + extension;
+    }
+
+    public static String today() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy/MM/dd HH:mm");
+        String formatTime = LocalDateTime.now().format(formatter);
+        return formatTime;
     }
 
     public static BufferedWriter createBufferWriter(String backupPath, String uniqueName) {
@@ -201,7 +190,7 @@ public class RaceUtil {
         return extension.equalsIgnoreCase("csv");
     }
 
-    public static String exportHTMLReportByCategory(String pathReport, List<Runner> listRace) throws IOException {
+    public static String exportHTMLReportByTimeAndCategory(String pathReport, List<Runner> listRace) throws IOException {
         return exportHTMLFile(pathReport, listRace, true);
     }
 
@@ -210,66 +199,68 @@ public class RaceUtil {
     }
 
 
-    private static String exportHTMLFile(String pathReport, List<Runner> listRace, boolean isByCatgory) throws IOException {
+    private static String exportHTMLFile(String pathReport, List<Runner> runners, boolean isByCatgory) throws IOException {
 
 
-        String uniqueName = createUniqueNameFile("/" + (isByCatgory ? REPORT_CATEGORY_PREFIX : REPORT_ALL_PREFIX), HTML_EXTENSION);
+        StringBuilder htmlPage = new StringBuilder();
+        htmlPage.append(HTML_HEADER);
 
+        htmlPage.append("<h1>[BibBeep report] ").append(today()).append(" by the Joggans club.</h1>");
 
-        Comparator<Runner> byTime = Comparator.comparing(Runner::getTime);
-        listRace = listRace.stream().sorted(byTime).collect(Collectors.toList());
+        Map<String, List<Runner>> runnersSorted = sortRunnersByTimeAndCotegory(runners, isByCatgory);
 
-        try (BufferedWriter writer = createBufferWriter(pathReport, uniqueName)) {
-            writer.write(HTML_HEADER);
-
-            Map<String, List<Runner>> mapCategory;
-            if (isByCatgory) {
-                mapCategory = listRace.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getCategory()));
-            } else {
-                mapCategory = new HashMap<>();
-                mapCategory.put("aucune/geen", listRace);
-            }
-            Comparator<String> byCategory = Comparator.comparing(Runner::getCategoryScore);
-            mapCategory.keySet().stream().sorted(byCategory).forEach(
-                    category -> {
-                        try {
-                            writer.write("<h2> Catégorie/categorie " + Runner.getCategoryName(category) + "</h2>\n");
-                            writer.write(TABLE_HEADER);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        AtomicInteger counter = new AtomicInteger(1);
-                        mapCategory.get(category).stream().forEach(
-                                raceResult -> {
-                                    try {
-                                        writer.write("<tr>\n" +
-                                                "    <td>" + counter.getAndIncrement() + "</td>\n" +
-                                                "    <td>" + raceResult.getId() + "</td>\n" +
-                                                "    <td>" + raceResult.getFirstName() + " " + raceResult.getLastName() + "</td>\n" +
-                                                "    <td>" + raceResult.getTime() + "</td>\n" +
-                                                "    <td>" + raceResult.getClub() + "</td>\n" +
-                                                "    <td>" + raceResult.getGender() + "</td>\n" +
-                                                "  </tr>");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                        );
-
-                        try {
-                            writer.write(TABLE_FOOTER);
-                            writer.write("<h3>Total/totaal: " + counter.decrementAndGet() + "</h3>\n");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+        runnersSorted.keySet().stream().sorted(Comparator.comparing(Runner::getCategoryScore)).forEach(
+                category -> {
+                    if (isByCatgory) {
+                        htmlPage.append("<h2>Category: ").append(Runner.getCategoryName(category)).append("</h2>");
                     }
+                    htmlPage.append(TABLE_HEADER);
+                    AtomicInteger counter = new AtomicInteger(1);
+                    runnersSorted.get(category).stream().forEach(
+                            raceResult -> htmlPage.append("<tr>")
+                                    .append("<td>").append(counter.getAndIncrement()).append("</td>")
+                                    .append("<td>").append(raceResult.getId()).append("</td>")
+                                    .append("<td>").append(raceResult.getFirstName()).append(" ").append(raceResult.getLastName()).append("</td>")
+                                    .append("<td>").append(raceResult.getTime()).append("</td>")
+                                    .append("<td>").append(raceResult.getClub()).append("</td>")
+                                    .append("<td>").append(raceResult.getGender()).append("</td>")
+                                    .append("</tr>")
+                    );
 
-            );
+                    htmlPage.append(TABLE_FOOTER);
+                    htmlPage.append("<h3>Total/totaal: ").append(counter.decrementAndGet()).append("</h3>");
 
-            writer.write(HTML_FOOTER);
+                }
+
+        );
+
+        htmlPage.append(HTML_FOOTER);
+
+        return createReport(htmlPage.toString(), pathReport, isByCatgory);
+    }
+
+    private static String createReport(String htmlPage, String pathReport, boolean isByCatgory) {
+
+        String uniqueName = createUniqueNameFile((isByCatgory ? REPORT_CATEGORY_PREFIX : REPORT_ALL_PREFIX), HTML_EXTENSION);
+        try (BufferedWriter writer = createBufferWriter(pathReport, uniqueName)) {
+            writer.write(htmlPage);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return uniqueName;
+    }
+
+    private static Map<String, List<Runner>> sortRunnersByTimeAndCotegory(List<Runner> runners, boolean isByCategory) {
+        List<Runner> runnersSortByTime = runners.stream().sorted(Comparator.comparing(Runner::getTime)).collect(Collectors.toList());
+        Map<String, List<Runner>> runnersGroupByCategory;
+        if (isByCategory) {
+            runnersGroupByCategory = runnersSortByTime.stream().collect(Collectors.groupingBy(raceResult -> raceResult.getCategory()));
+        } else {
+            runnersGroupByCategory = new HashMap<>();
+            runnersGroupByCategory.put(NO_CATGORY, runnersSortByTime);
+        }
+        return runnersGroupByCategory;
     }
 
 }

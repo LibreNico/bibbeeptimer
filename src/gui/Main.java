@@ -145,9 +145,9 @@ public class Main extends Application {
             if ((!removeLastDigitLabel.isSelected() && bib.length() < 2)
                     || (removeLastDigitLabel.isSelected() && bib.length() < 1)) {
                 RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " is not long enough.");
-            } else if (!RaceUtil.isNumeric(bib)) {
+            } /*else if (!RaceUtil.isNumeric(bib)) {
                 RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " is not numeric.");
-            } else if (alreadyBeeped.contains(bib)) {
+            } */else if (alreadyBeeped.contains(bib)) {
                 RaceUtil.pushErrorNotification(BIB_SCANNING_TITLE, "Scanned input " + bib + " already scan.");
             } else {
                 String time = timerLabel.getText();
@@ -191,7 +191,7 @@ public class Main extends Application {
         runnersScannedLabel = new Label(LABEL_BIB + mapIdTime.size() + " | ");
 
         removeLastDigitLabel = new CheckBox(LABEL_WITH_CHECK_DIGIT);
-        removeLastDigitLabel.setSelected(true);
+        removeLastDigitLabel.setSelected(false);
         removeLastDigitLabel.setTooltip(new Tooltip("The scanning system take all digit from the bib or remove the last one (check digit)?"));
 
         infoBox.getChildren().addAll(importedRunnersLabel, runnersScannedLabel, removeLastDigitLabel);
@@ -346,7 +346,7 @@ public class Main extends Application {
 
             try {
                 RaceUtil.exportHTMLReportByTime(backupPath, listRace);
-                RaceUtil.exportHTMLReportByCategory(backupPath, listRace);
+                RaceUtil.exportHTMLReportByTimeAndCategory(backupPath, listRace);
                 RaceUtil.pushInfoNotification("Report created", REPORT_ALL_PREFIX + " and " + REPORT_CATEGORY_PREFIX + " exported in " + backupPath);
             } catch (IOException e1) {
                 RaceUtil.pushErrorNotification(REPORT_TITLE, "Export report failde: " + e1.getMessage());
